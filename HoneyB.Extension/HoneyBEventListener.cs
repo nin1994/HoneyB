@@ -277,6 +277,7 @@ namespace HoneyB
     {
         public static string GetTimelineFilePath()
         {
+            string finalPath = null;
             string dir = System.IO.Path.GetTempPath();
             try
             {
@@ -287,10 +288,36 @@ namespace HoneyB
                     if (dte != null && dte.Solution != null && !string.IsNullOrEmpty(dte.Solution.FullName))
                     {
                         dir = System.IO.Path.GetDirectoryName(dte.Solution.FullName);
+                        
+                        // Check for project-level config
+                        string configPath = System.IO.Path.Combine(dir, "honeyb.json");
+                        if (System.IO.File.Exists(configPath))
+                        {
+                            try
+                            {
+                                string configJson = System.IO.File.ReadAllText(configPath);
+                                var config = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(configJson);
+                                if (config != null && config.timelinePath != null)
+                                {
+                                    string customPath = (string)config.timelinePath;
+                                    if (!string.IsNullOrWhiteSpace(customPath))
+                                    {
+                                        if (!System.IO.Path.IsPathRooted(customPath))
+                                            customPath = System.IO.Path.Combine(dir, customPath);
+                                        finalPath = customPath;
+                                    }
+                                }
+                            }
+                            catch { }
+                        }
                     }
                 });
             }
             catch { }
+
+            if (!string.IsNullOrEmpty(finalPath))
+                return finalPath;
+
             return System.IO.Path.Combine(dir, "honeyb_timeline.json");
         }
     }
