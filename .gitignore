@@ -1,20 +1,101 @@
-# Python
-__pycache__/
-*.pyc
-venv/
-.env
-
-# Models (too large for git)
-models/
-
-# VS build output
-extension/bin/
-extension/obj/
+# ── C# / .NET ─────────────────────────────────────────────────────────────────
+bin/
+obj/
 *.user
-
-# Snapshots (runtime data)
-backend/snapshots/
-
-# IDE
-.vs/
 *.suo
+*.userosscache
+*.sln.docstates
+
+# NuGet restore artifacts (packages folder if used, lock files are OK to keep)
+packages/
+*.nupkg
+*.snupkg
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# ── VSIX / Visual Studio Extension ───────────────────────────────────────────
+*.vsix
+*.pkgdef
+# Extension manifest cache
+*.cache
+
+# ── Visual Studio IDE ─────────────────────────────────────────────────────────
+.vs/
+*.aps
+*.ncb
+*.opendb
+*.opensdf
+*.sdf
+*.cachefile
+*.VC.db
+*.VC.VC.opendb
+
+# Rider
+.idea/
+*.sln.iml
+
+# ── Python / Backend ──────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+ENV/
+
+# Environment / secrets
+.env
+.env.*
+*.secret
+secrets.json
+
+# pytest / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# ── LLM Models (large binary files) ──────────────────────────────────────────
+models/
+*.gguf
+*.ggml
+*.bin
+*.safetensors
+*.pt
+*.pth
+
+# ── Runtime data ──────────────────────────────────────────────────────────────
+# Snapshot files written by the backend at runtime
+backend/snapshots/
+backend/snapshot_store/snapshots/
+*.snapshot.json
+
+# ── macOS ─────────────────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
