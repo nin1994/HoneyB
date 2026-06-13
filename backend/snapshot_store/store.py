@@ -6,6 +6,7 @@ to timeline.json in the project root after every new snapshot.
 
 import json
 import time
+import threading
 from pathlib import Path
 from typing import Optional
 
@@ -18,6 +19,7 @@ class SnapshotStore:
         self._next_id = 0
         self._persist_dir = Path(persist_dir) if persist_dir else None
         self._timeline_path = Path(timeline_path) if timeline_path else None
+        self._lock = threading.Lock()
 
         if self._persist_dir:
             self._persist_dir.mkdir(parents=True, exist_ok=True)
@@ -30,21 +32,22 @@ class SnapshotStore:
     # ── Write ─────────────────────────────────────────────────────────────────
 
     def save(self, snapshot_data: dict) -> int:
-        snap_id = self._next_id
-        self._next_id += 1
+        with self._lock:
+            snap_id = self._next_id
+            self._next_id += 1
 
-        snapshot_data["id"] = snap_id
-        snapshot_data["timestamp"] = time.time()
-        self._snapshots[snap_id] = snapshot_data
+            snapshot_data["id"] = snap_id
+            snapshot_data["timestamp"] = time.time()
+            self._snapshots[snap_id] = snapshot_data
 
-        if self._persist_dir:
-            path = self._persist_dir / f"snapshot_{snap_id}.json"
-            path.write_text(json.dumps(snapshot_data, indent=2))
+            if self._persist_dir:
+                path = self._persist_dir / f"snapshot_{snap_id}.json"
+                path.write_text(json.dumps(snapshot_data, indent=2))
 
-        # Rewrite timeline.json after every save
-        self._write_timeline()
+            # Rewrite timeline.json after every save
+            self._write_timeline()
 
-        return snap_id
+            return snap_id
 
     # ── Read ──────────────────────────────────────────────────────────────────
 

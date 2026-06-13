@@ -57,10 +57,23 @@ namespace HoneyB
 
         private static int _nextSnapId = 1;
 
+        private static readonly object _fileLock = new object();
+
         private void OnEnterRunMode(dbgEventReason reason)
         {
-            var tempFile = HoneyBUtils.GetTimelineFilePath();
-            try { if (System.IO.File.Exists(tempFile)) System.IO.File.Delete(tempFile); } catch { }
+            lock (_fileLock)
+            {
+                try
+                {
+                    var tempFile = HoneyBUtils.GetTimelineFilePath();
+                    if (System.IO.File.Exists(tempFile))
+                        System.IO.File.Delete(tempFile);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[AiDebugger] Timeline reset failed: {ex.Message}");
+                }
+            }
             _nextSnapId = 1;
 
             _ = SendEmptyEventAsync("Session Started", "session_start");
@@ -243,17 +256,10 @@ namespace HoneyB
                 });
 
                 // Write timeline to local file
-                var tempFile = HoneyBUtils.GetTimelineFilePath();
-                var entries = new List<dynamic>();
-                if (System.IO.File.Exists(tempFile))
+                lock (_fileLock)
                 {
-                    try { entries = JsonConvert.DeserializeObject<List<dynamic>>(System.IO.File.ReadAllText(tempFile)) ?? new List<dynamic>(); } catch { }
+                    HoneyBUtils.AppendTimelineEntry(entry);
                 }
-                entries.Add(entry);
-                System.IO.File.WriteAllText(tempFile, JsonConvert.SerializeObject(entries, Formatting.Indented, new JsonSerializerSettings
-                {
-                    ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver()
-                }));
 
                 // Notify local windows immediately
                 HoneyBChatWindow.Instance?.OnNewSnapshot(entry.id, snapshot.Label);
@@ -277,8 +283,10 @@ namespace HoneyB
     {
         public static string GetTimelineFilePath()
         {
-            string finalPath = null;
-            string dir = System.IO.Path.GetTempPath();
+            string configuredPath = null;
+            string solutionDir = null;
+            string solutionName = "default";
+
             try
             {
                 ThreadHelper.JoinableTaskFactory.Run(async delegate
@@ -287,10 +295,11 @@ namespace HoneyB
                     var dte = (EnvDTE.DTE)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(EnvDTE.DTE));
                     if (dte != null && dte.Solution != null && !string.IsNullOrEmpty(dte.Solution.FullName))
                     {
-                        dir = System.IO.Path.GetDirectoryName(dte.Solution.FullName);
+                        solutionDir = System.IO.Path.GetDirectoryName(dte.Solution.FullName);
+                        solutionName = System.IO.Path.GetFileNameWithoutExtension(dte.Solution.FullName);
                         
                         // Check for project-level config
-                        string configPath = System.IO.Path.Combine(dir, "honeyb.json");
+                        string configPath = System.IO.Path.Combine(solutionDir, "honeyb.json");
                         if (System.IO.File.Exists(configPath))
                         {
                             try
@@ -303,8 +312,8 @@ namespace HoneyB
                                     if (!string.IsNullOrWhiteSpace(customPath))
                                     {
                                         if (!System.IO.Path.IsPathRooted(customPath))
-                                            customPath = System.IO.Path.Combine(dir, customPath);
-                                        finalPath = customPath;
+                                            customPath = System.IO.Path.Combine(solutionDir, customPath);
+                                        configuredPath = customPath;
                                     }
                                 }
                             }
@@ -315,10 +324,74 @@ namespace HoneyB
             }
             catch { }
 
-            if (!string.IsNullOrEmpty(finalPath))
-                return finalPath;
+            if (!string.IsNullOrEmpty(configuredPath))
+                return configuredPath;
 
-            return System.IO.Path.Combine(dir, "honeyb_timeline.json");
+            return GetDefaultTimelineFilePath(solutionName);
+        }
+
+        public static void AppendTimelineEntry(object entry)
+        {
+            WriteTimelineEntry(entry, GetTimelineFilePath());
+        }
+
+        private static void WriteTimelineEntry(object entry, string timelinePath)
+        {
+            try
+            {
+                string dir = System.IO.Path.GetDirectoryName(timelinePath);
+                if (!string.IsNullOrEmpty(dir))
+                    System.IO.Directory.CreateDirectory(dir);
+
+                var entries = new List<dynamic>();
+                if (System.IO.File.Exists(timelinePath))
+                {
+                    try
+                    {
+                        entries = JsonConvert.DeserializeObject<List<dynamic>>(System.IO.File.ReadAllText(timelinePath)) ?? new List<dynamic>();
+                    }
+                    catch { }
+                }
+
+                entries.Add(entry);
+                System.IO.File.WriteAllText(timelinePath, JsonConvert.SerializeObject(entries, Formatting.Indented, new JsonSerializerSettings
+                {
+                    ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver()
+                }));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                string fallbackPath = GetDefaultTimelineFilePath("default");
+                if (!string.Equals(timelinePath, fallbackPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    System.Diagnostics.Debug.WriteLine($"[AiDebugger] Timeline path denied ({timelinePath}); falling back to {fallbackPath}: {ex.Message}");
+                    WriteTimelineEntry(entry, fallbackPath);
+                    return;
+                }
+
+                throw;
+            }
+        }
+
+        private static string GetDefaultTimelineFilePath(string solutionName)
+        {
+            string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            if (string.IsNullOrWhiteSpace(localAppData))
+                localAppData = System.IO.Path.GetTempPath();
+
+            string safeSolutionName = MakeSafeFileName(solutionName);
+            return System.IO.Path.Combine(localAppData, "HoneyB", safeSolutionName, "honeyb_timeline.json");
+        }
+
+        private static string MakeSafeFileName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                return "default";
+
+            foreach (char invalidChar in System.IO.Path.GetInvalidFileNameChars())
+                name = name.Replace(invalidChar, '_');
+
+            return string.IsNullOrWhiteSpace(name) ? "default" : name;
         }
     }
 
