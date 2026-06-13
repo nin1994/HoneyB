@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -103,9 +104,21 @@ namespace HoneyB
 
             try
             {
-                var snapshot = BuildSnapshot(reason);
+                var snapshot = BuildSnapshot(reason, out var localsFrames);
                 if (snapshot != null)
                     _ = SendSnapshotAsync(snapshot);
+
+                // Populate Explore tab with live locals
+                HoneyBExploreWindow.Instance?.PopulateExplore(localsFrames);
+
+                // Evaluate pinned watch paths via GetExpression (UI thread required)
+                var debugger = _dte.Debugger as Debugger2;
+                if (debugger != null)
+                {
+                    var watchResults = EvaluateWatchedPaths(debugger, snapshot);
+                    HoneyBExploreWindow.Instance?.OnWatchEvaluated(watchResults);
+                    _ = SendWatchAsync(watchResults);
+                }
             }
             catch (Exception ex)
             {
@@ -113,8 +126,116 @@ namespace HoneyB
             }
         }
 
-        private SnapshotPayload BuildSnapshot(dbgEventReason reason)
+        // ── Watch evaluation ──────────────────────────────────────────────────
+
+        private static readonly HashSet<string> CollectionTypeHints = new HashSet<string>
         {
+            "List", "IList", "ICollection", "IEnumerable", "Array",
+            "HashSet", "Dictionary", "Queue", "Stack", "ObservableCollection"
+        };
+
+        /// <summary>
+        /// Iterate the WatchStore whitelist and evaluate each path via GetExpression.
+        /// Invalid / out-of-scope expressions are silently skipped (value = null).
+        /// Collections have .Count evaluated instead of the raw collection string.
+        /// Must be called on the UI thread.
+        /// </summary>
+        private List<WatchEvalResult> EvaluateWatchedPaths(Debugger2 debugger, SnapshotPayload snapshot)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            var results = new List<WatchEvalResult>();
+
+            string capturedAt = "";
+            if (snapshot?.Frames?.Count > 0)
+            {
+                var f = snapshot.Frames[0];
+                capturedAt = $"{f.Function} ({f.File}:{f.Line})";
+            }
+
+            foreach (var watched in WatchStore.Instance.Paths)
+            {
+                try
+                {
+                    var expr = debugger.GetExpression(watched.Path);
+                    if (expr == null || !expr.IsValidValue)
+                    {
+                        results.Add(new WatchEvalResult
+                        {
+                            Path = watched.Path, Label = watched.Label,
+                            SeenIn = watched.SeenIn, CapturedAt = capturedAt,
+                            Value = null
+                        });
+                        continue;
+                    }
+
+                    // Determine if this looks like a collection — if so, evaluate .Count
+                    string value = expr.Value;
+                    bool looksLikeCollection = CollectionTypeHints.Any(hint =>
+                        (expr.Type ?? "").Contains(hint));
+
+                    if (looksLikeCollection)
+                    {
+                        try
+                        {
+                            var countExpr = debugger.GetExpression(watched.Path + ".Count");
+                            if (countExpr != null && countExpr.IsValidValue)
+                                value = $"Count={countExpr.Value}";
+                        }
+                        catch { }
+                    }
+
+                    results.Add(new WatchEvalResult
+                    {
+                        Path = watched.Path, Label = watched.Label,
+                        SeenIn = watched.SeenIn, CapturedAt = capturedAt,
+                        Value = value
+                    });
+                }
+                catch
+                {
+                    // Silently skip any expression that throws
+                    results.Add(new WatchEvalResult
+                    {
+                        Path = watched.Path, Label = watched.Label,
+                        SeenIn = watched.SeenIn, CapturedAt = capturedAt,
+                        Value = null
+                    });
+                }
+            }
+
+            return results;
+        }
+
+        private async Task SendWatchAsync(List<WatchEvalResult> results)
+        {
+            if (results == null || results.Count == 0) return;
+            try
+            {
+                var payload = results.Select(r => new
+                {
+                    path      = r.Path,
+                    label     = r.Label,
+                    value     = r.Value,
+                    seenIn    = r.SeenIn,
+                    timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+                });
+
+                var content = new StringContent(
+                    JsonConvert.SerializeObject(payload),
+                    System.Text.Encoding.UTF8, "application/json");
+                _ = Http.PostAsync("/watch", content);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[AiDebugger] SendWatch failed: {ex.Message}");
+            }
+        }
+
+        // ── Snapshot building ─────────────────────────────────────────────────
+
+        private SnapshotPayload BuildSnapshot(dbgEventReason reason, out List<LocalsFrame> localsFrames)
+        {
+            localsFrames = new List<LocalsFrame>();
             ThreadHelper.ThrowIfNotOnUIThread();
 
             var debugger = _dte.Debugger as Debugger2;
@@ -134,6 +255,14 @@ namespace HoneyB
             foreach (dynamic frame in debugger.CurrentThread.StackFrames)
             {
                 var locals = new List<VariablePayload>();
+                var exploreLocals = new List<LocalVar>();
+
+                string frameFunctionName = "?";
+                string frameFileName = "?";
+                int frameLineNumber = 0;
+                try { frameFunctionName = (string)frame.FunctionName; } catch { }
+                try { frameFileName = (string)frame.FileName; } catch { }
+                try { frameLineNumber = (int)frame.LineNumber; } catch { }
 
                 try
                 {
@@ -147,6 +276,14 @@ namespace HoneyB
                             Children = new List<VariablePayload>()
                         };
 
+                        var exploreVar = new LocalVar
+                        {
+                            Name = local.Name,
+                            Type = local.Type,
+                            Value = local.Value,
+                            DottedPath = local.Name,
+                        };
+
                         // One level of children (fields of objects)
                         if (local.DataMembers != null)
                         {
@@ -158,19 +295,20 @@ namespace HoneyB
                                     Type = member.Type,
                                     Value = member.Value
                                 });
+                                exploreVar.Children.Add(new LocalVar
+                                {
+                                    Name = member.Name,
+                                    Type = member.Type,
+                                    Value = member.Value,
+                                    DottedPath = $"{local.Name}.{member.Name}",
+                                });
                             }
                         }
                         locals.Add(varPayload);
+                        exploreLocals.Add(exploreVar);
                     }
                 }
                 catch { /* some frames have no accessible locals */ }
-
-                string frameFunctionName = "?";
-                string frameFileName = "?";
-                int frameLineNumber = 0;
-                try { frameFunctionName = (string)frame.FunctionName; } catch { }
-                try { frameFileName = (string)frame.FileName; } catch { }
-                try { frameLineNumber = (int)frame.LineNumber; } catch { }
 
                 frames.Add(new FramePayload
                 {
@@ -178,6 +316,14 @@ namespace HoneyB
                     File = frameFileName,
                     Line = frameLineNumber,
                     Locals = locals,
+                });
+
+                localsFrames.Add(new LocalsFrame
+                {
+                    FunctionName = frameFunctionName,
+                    FileName = frameFileName,
+                    Line = frameLineNumber,
+                    Locals = exploreLocals,
                 });
 
                 // Cap at 5 frames to keep context manageable
@@ -263,6 +409,7 @@ namespace HoneyB
 
                 // Notify local windows immediately
                 HoneyBChatWindow.Instance?.OnNewSnapshot(entry.id, snapshot.Label);
+                HoneyBExploreWindow.Instance?.OnNewSnapshot(entry.id, snapshot.Label);
                 HoneyBTimelineWindow.Instance?.OnNewTimelineEntry(jsonEntry);
 
                 // Best-effort send to backend if running, but we don't rely on its response
