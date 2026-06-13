@@ -74,7 +74,7 @@ cmake --build build --config Release
 
 ### 5. Open the extension in Visual Studio
 
-Open `extension/HoneyB.csproj` in Visual Studio.
+Open `HoneyB.sln` in Visual Studio.
 Make sure the "Visual Studio extension development" workload is installed.
 Press F5 to launch an Experimental VS instance with the extension loaded.
 
@@ -130,12 +130,12 @@ HoneyB/
 │   │   └── assembler.py           # Prompt builder
 │   └── llm/
 │       └── llama_client.py        # llama.cpp HTTP client
-├── extension/
+├── HoneyB.Extension/
 │   ├── HoneyB.csproj
-│   ├── HoneyBPackage.cs       # VS package entry point
-│   ├── DebuggerEventListener.cs   # Hooks breakpoint events, sends snapshots
-│   ├── DebuggerChatWindow.cs      # Tool window UI (WPF)
-│   ├── OpenChatWindowCommand.cs   # View menu command
+│   ├── HoneyBPackage.cs           # VS package entry point
+│   ├── HoneyBEventListener.cs     # Hooks breakpoint events, sends snapshots
+│   ├── HoneyBChatWindow.cs        # Tool window UI
+│   ├── OpenHoneyBCommand.cs       # View menu command
 │   └── source.extension.vsixmanifest
 ├── models/                        # Put your .gguf model here
 └── README.md
@@ -193,8 +193,26 @@ Tests verify:
 The standard VS extension debugging approach:
 1. Open `HoneyB.sln`
 2. Set `HoneyB.Extension` as startup project
-3. Press F5 — this launches an **Experimental VS instance** with HoneyB loaded
-4. In the Experimental instance, open any C# project and debug it
-5. Set breakpoints in HoneyB's own source in the main VS window to debug it
+3. Set breakpoints in HoneyB's source files in the original/main VS window
+4. Press F5. This launches an Experimental VS instance with HoneyB loaded
+5. In the Experimental instance, open any C# project and debug it
 
-This means you have two VS windows: one running HoneyB, one being debugged by HoneyB.
+This means you have two VS windows. The original/main VS window is debugging the HoneyB extension process, so HoneyB breakpoints belong there. The Experimental VS window is only the test host where you open and debug another project.
+
+If the Experimental instance is already open, stop debugging in the original/main VS window, set or change HoneyB breakpoints there, then press F5 again.
+
+### Building the VSIX
+
+Build the extension with Visual Studio or the Visual Studio Developer Command Prompt on Windows:
+
+```powershell
+msbuild HoneyB.sln /p:Configuration=Release
+```
+
+The VSIX is written to:
+
+```text
+HoneyB.Extension\bin\Release\net48\HoneyB.vsix
+```
+
+Use Visual Studio/MSBuild for VSIX packaging. Cross-platform `dotnet build` can compile the DLL, but the VS SDK packaging tasks are intended to run under Visual Studio's MSBuild on Windows.
