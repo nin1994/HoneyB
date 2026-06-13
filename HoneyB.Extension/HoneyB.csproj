@@ -39,14 +39,6 @@
     <PackageReference Include="EnvDTE90" Version="17.0.31902.203" />
   </ItemGroup>
 
-  <ItemGroup>
-    <!-- The VSCT compiler turns this into Menus.ctmenu (referenced by ProvideMenuResource) -->
-    <VSCTCompile Include="HoneyBCommands.vsct">
-      <ResourceName>Menus.ctmenu</ResourceName>
-      <SubType>Designer</SubType>
-    </VSCTCompile>
-  </ItemGroup>
-
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
   <Import Project="$(PkgMicrosoft_VSSDK_BuildTools)/tools/vssdk/Microsoft.VsSDK.targets" Condition="'$(MSBuildRuntimeType)' != 'Core' and Exists('$(PkgMicrosoft_VSSDK_BuildTools)/tools/vssdk/Microsoft.VsSDK.targets')" />
 

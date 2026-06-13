@@ -11,13 +11,14 @@ namespace HoneyB
 {
     /// <summary>
     /// Main package. Registers the tool windows and hooks into VS debugger events.
+    /// Auto-shows the Explorer window when the package loads (triggered by debug start).
     /// </summary>
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
     [Guid(PackageGuidString)]
     [ProvideToolWindow(typeof(HoneyBChatWindow))]
     [ProvideToolWindow(typeof(HoneyBTimelineWindow))]
     [ProvideToolWindow(typeof(HoneyBExploreWindow))]
-    [ProvideMenuResource("Menus.ctmenu", 1)]
+    // NOTE: No [ProvideMenuResource] — menus are not needed; windows auto-show on load.
     [ProvideAutoLoad(UIContextGuids80.Debugging, PackageAutoLoadFlags.BackgroundLoad)]
     public sealed class HoneyBPackage : AsyncPackage
     {
@@ -51,7 +52,26 @@ namespace HoneyB
             _listener = new HoneyBEventListener(this);
             _listener.Start();
 
-            // Register the commands to open the tool windows
+            // Auto-show the HoneyB Explorer window (Chat + Explore + Watch tabs)
+            // This runs every time the package loads (i.e. when a debug session starts).
+            try
+            {
+                var exploreWindow = await ShowToolWindowAsync(
+                    typeof(HoneyBExploreWindow),
+                    id: 0,
+                    create: true,
+                    cancellationToken: cancellationToken);
+
+                if (exploreWindow?.Frame is IVsWindowFrame frame)
+                    frame.Show();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(
+                    $"[HoneyB] Could not show Explorer window: {ex.Message}");
+            }
+
+            // Register the commands so they are still invokable via keyboard/command bar
             await OpenHoneyBCommand.InitializeAsync(this);
             await OpenHoneyBTimelineCommand.InitializeAsync(this);
             await OpenHoneyBExploreCommand.InitializeAsync(this);
