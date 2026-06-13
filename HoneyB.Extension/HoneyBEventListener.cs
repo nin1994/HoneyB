@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using EnvDTE;
 using EnvDTE80;
+using EnvDTE90;
 using Microsoft.VisualStudio.Shell;
 using Newtonsoft.Json;
 
@@ -15,7 +16,7 @@ namespace HoneyB
     /// When execution pauses, reads all locals via DTE and ships them
     /// to the Python backend as a snapshot.
     /// </summary>
-    public class HoneyBEventListener : DebuggerEvents
+    public class HoneyBEventListener
     {
         private readonly AsyncPackage _package;
         private DTE2 _dte;
@@ -74,7 +75,7 @@ namespace HoneyB
             var frames = new List<FramePayload>();
 
             // Walk all stack frames
-            foreach (StackFrame2 frame in debugger.CurrentThread.StackFrames)
+            foreach (dynamic frame in debugger.CurrentThread.StackFrames)
             {
                 var locals = new List<VariablePayload>();
 
@@ -106,11 +107,18 @@ namespace HoneyB
                 }
                 catch { /* some frames have no accessible locals */ }
 
+                string frameFunctionName = "?";
+                string frameFileName = "?";
+                int frameLineNumber = 0;
+                try { frameFunctionName = (string)frame.FunctionName; } catch { }
+                try { frameFileName = (string)frame.FileName; } catch { }
+                try { frameLineNumber = (int)frame.LineNumber; } catch { }
+
                 frames.Add(new FramePayload
                 {
-                    Function = frame.FunctionName ?? "?",
-                    File = frame.FileName ?? "?",
-                    Line = (int)(frame.LineNumber),
+                    Function = frameFunctionName,
+                    File = frameFileName,
+                    Line = frameLineNumber,
                     Locals = locals,
                 });
 

@@ -8,12 +8,17 @@
     <GeneratePkgDefFile>true</GeneratePkgDefFile>
     <IncludeAssemblyInVSIXContainer>true</IncludeAssemblyInVSIXContainer>
     <UseCodebase>true</UseCodebase>
+    <LangVersion>latest</LangVersion>
+    <!-- Tells VS this is a VSIX project → F5 launches the Experimental Instance -->
+    <ProjectTypeGuids>{82b43b9b-a64c-4715-b499-d71e9ca2bd60};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <DeployExtension>true</DeployExtension>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.0.31902.203" />
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.0.5232" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="EnvDTE90" Version="17.0.31902.203" />
   </ItemGroup>
 
 </Project>
