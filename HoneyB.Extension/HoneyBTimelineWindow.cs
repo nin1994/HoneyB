@@ -97,13 +97,13 @@ namespace HoneyB
         {
             try
             {
-                using (var http = new HttpClient { BaseAddress = new Uri("http://127.0.0.1:5678"), Timeout = TimeSpan.FromSeconds(5) })
+                var tempFile = HoneyBUtils.GetTimelineFilePath();
+                if (System.IO.File.Exists(tempFile))
                 {
-                    var response = await http.GetAsync("/timeline");
-                    if (response.IsSuccessStatusCode)
+                    var json = System.IO.File.ReadAllText(tempFile);
+                    var entries = JsonConvert.DeserializeObject<List<dynamic>>(json);
+                    if (entries != null)
                     {
-                        var json = await response.Content.ReadAsStringAsync();
-                        var entries = JsonConvert.DeserializeObject<List<dynamic>>(json);
                         foreach (var e in entries)
                         {
                             AddTimelineEntry(JsonConvert.SerializeObject(e), render: false);
@@ -112,7 +112,7 @@ namespace HoneyB
                     }
                 }
             }
-            catch { /* Backend not running yet */ }
+            catch { /* File not found or read error */ }
         }
 
         public void AddTimelineEntry(string jsonEntry, bool render = true)

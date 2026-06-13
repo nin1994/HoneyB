@@ -55,8 +55,14 @@ namespace HoneyB
             }
         }
 
+        private static int _nextSnapId = 1;
+
         private void OnEnterRunMode(dbgEventReason reason)
         {
+            var tempFile = HoneyBUtils.GetTimelineFilePath();
+            try { if (System.IO.File.Exists(tempFile)) System.IO.File.Delete(tempFile); } catch { }
+            _nextSnapId = 1;
+
             _ = SendEmptyEventAsync("Session Started", "session_start");
         }
 
@@ -221,35 +227,71 @@ namespace HoneyB
         {
             try
             {
-                var json = JsonConvert.SerializeObject(snapshot, new JsonSerializerSettings
+                var entry = new
                 {
-                    ContractResolver = new Newtonsoft.Json.Serialization
-                        .CamelCasePropertyNamesContractResolver()
+                    id = _nextSnapId++,
+                    label = snapshot.Label,
+                    event_kind = snapshot.EventKind,
+                    thread_name = snapshot.ThreadName,
+                    frames = snapshot.Frames,
+                    changed_vars = new List<string>()
+                };
+
+                string jsonEntry = JsonConvert.SerializeObject(entry, new JsonSerializerSettings
+                {
+                    ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver()
                 });
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-                var response = await Http.PostAsync("/snapshot", content);
 
-                if (response.IsSuccessStatusCode)
+                // Write timeline to local file
+                var tempFile = HoneyBUtils.GetTimelineFilePath();
+                var entries = new List<dynamic>();
+                if (System.IO.File.Exists(tempFile))
                 {
-                    var body = await response.Content.ReadAsStringAsync();
-                    var result = JsonConvert.DeserializeObject<dynamic>(body);
-                    int snapId = (int)result.snapshot_id;
-
-                    // Notify the chat window a new snapshot arrived
-                    HoneyBChatWindow.Instance?.OnNewSnapshot(snapId, snapshot.Label);
-
-                    // Notify the timeline window of the full timeline entry
-                    if (result.timeline_entry != null)
-                    {
-                        string jsonEntry = JsonConvert.SerializeObject(result.timeline_entry);
-                        HoneyBTimelineWindow.Instance?.OnNewTimelineEntry(jsonEntry);
-                    }
+                    try { entries = JsonConvert.DeserializeObject<List<dynamic>>(System.IO.File.ReadAllText(tempFile)) ?? new List<dynamic>(); } catch { }
                 }
+                entries.Add(entry);
+                System.IO.File.WriteAllText(tempFile, JsonConvert.SerializeObject(entries, Formatting.Indented, new JsonSerializerSettings
+                {
+                    ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver()
+                }));
+
+                // Notify local windows immediately
+                HoneyBChatWindow.Instance?.OnNewSnapshot(entry.id, snapshot.Label);
+                HoneyBTimelineWindow.Instance?.OnNewTimelineEntry(jsonEntry);
+
+                // Best-effort send to backend if running, but we don't rely on its response
+                var content = new StringContent(JsonConvert.SerializeObject(snapshot, new JsonSerializerSettings
+                {
+                    ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver()
+                }), Encoding.UTF8, "application/json");
+                _ = Http.PostAsync("/snapshot", content); 
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[AiDebugger] Send failed: {ex.Message}");
             }
+        }
+    }
+
+    public static class HoneyBUtils
+    {
+        public static string GetTimelineFilePath()
+        {
+            string dir = System.IO.Path.GetTempPath();
+            try
+            {
+                ThreadHelper.JoinableTaskFactory.Run(async delegate
+                {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    var dte = (EnvDTE.DTE)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(EnvDTE.DTE));
+                    if (dte != null && dte.Solution != null && !string.IsNullOrEmpty(dte.Solution.FullName))
+                    {
+                        dir = System.IO.Path.GetDirectoryName(dte.Solution.FullName);
+                    }
+                });
+            }
+            catch { }
+            return System.IO.Path.Combine(dir, "honeyb_timeline.json");
         }
     }
 
