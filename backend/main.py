@@ -17,7 +17,7 @@ from typing import Optional, List
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 import uvicorn
 
@@ -157,13 +157,13 @@ async def watch_stream(websocket: WebSocket):
             _watch_connections.remove(websocket)
 
 
-@app.get("/dashboard")
+@app.get("/dashboard", response_class=HTMLResponse)
 def dashboard():
     """Serves the self-contained live watch dashboard."""
     dashboard_path = Path(__file__).parent / "dashboard.html"
     if not dashboard_path.exists():
-        raise HTTPException(status_code=404, detail="dashboard.html not found")
-    return FileResponse(str(dashboard_path), media_type="text/html")
+        raise HTTPException(status_code=404, detail="dashboard.html not found next to main.py")
+    return HTMLResponse(content=dashboard_path.read_text(encoding="utf-8"))
 
 
 @app.get("/timeline")
