@@ -9,9 +9,16 @@
     <IncludeAssemblyInVSIXContainer>true</IncludeAssemblyInVSIXContainer>
     <UseCodebase>true</UseCodebase>
     <LangVersion>latest</LangVersion>
-    <!-- Tells VS this is a VSIX project → F5 launches the Experimental Instance -->
+    <!-- Tells VS this is a VSIX project -->
     <ProjectTypeGuids>{82b43b9b-a64c-4715-b499-d71e9ca2bd60};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <DeployExtension>true</DeployExtension>
+  </PropertyGroup>
+
+  <!-- F5 launches the Experimental Instance instead of failing with "class library cannot be started" -->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+    <StartAction>Program</StartAction>
+    <StartProgram>$(DevEnvDir)devenv.exe</StartProgram>
+    <StartArguments>/rootsuffix Exp</StartArguments>
   </PropertyGroup>
 
   <ItemGroup>
