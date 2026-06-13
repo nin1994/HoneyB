@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
 import uvicorn
+from pathlib import Path
 
 from snapshot_store.store import SnapshotStore
 from context.assembler import ContextAssembler
@@ -24,7 +25,8 @@ app.add_middleware(
 )
 
 # Singletons
-store = SnapshotStore()
+root_dir = Path(__file__).parent.parent
+store = SnapshotStore(timeline_path=str(root_dir / "timeline.json"))
 assembler = ContextAssembler(store)
 llm = LlamaClient()
 
@@ -35,6 +37,7 @@ class Variable(BaseModel):
     name: str
     type: str
     value: str
+    children: Optional[list['Variable']] = None
 
 class StackFrame(BaseModel):
     function: str
@@ -44,6 +47,8 @@ class StackFrame(BaseModel):
 
 class SnapshotRequest(BaseModel):
     label: str                        # e.g. "Breakpoint hit at Program.cs:42"
+    event_kind: str = "breakpoint"
+    thread_name: str = "Main Thread"
     frames: list[StackFrame]
     source_context: Optional[str] = None   # few lines of source around breakpoint
 
@@ -58,7 +63,21 @@ class QueryRequest(BaseModel):
 def save_snapshot(req: SnapshotRequest):
     """Called by the VS extension every time execution pauses."""
     snap_id = store.save(req.model_dump())
-    return {"snapshot_id": snap_id, "total_snapshots": store.count()}
+    
+    # Get the rich timeline entry so the UI can update immediately
+    entries = store.timeline()
+    timeline_entry = next((e for e in entries if e["id"] == snap_id), None)
+    
+    return {
+        "snapshot_id": snap_id, 
+        "total_snapshots": store.count(),
+        "timeline_entry": timeline_entry
+    }
+
+@app.get("/timeline")
+def get_timeline():
+    """Returns the full chronological execution flow."""
+    return store.timeline()
 
 
 @app.get("/snapshots")

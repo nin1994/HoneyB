@@ -90,6 +90,7 @@ models/
 # ── Runtime data ──────────────────────────────────────────────────────────────
 # Snapshot files written by the backend at runtime
 backend/snapshots/
+timeline.json
 backend/snapshot_store/snapshots/
 *.snapshot.json
 

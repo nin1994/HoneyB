@@ -40,13 +40,42 @@ namespace HoneyB
 
             _debuggerEvents = _dte.Events.DebuggerEvents;
             _debuggerEvents.OnEnterBreakMode += OnEnterBreakMode;
+            _debuggerEvents.OnEnterRunMode += OnEnterRunMode;
+            _debuggerEvents.OnEnterDesignMode += OnEnterDesignMode;
         }
 
         public void Stop()
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             if (_debuggerEvents != null)
+            {
                 _debuggerEvents.OnEnterBreakMode -= OnEnterBreakMode;
+                _debuggerEvents.OnEnterRunMode -= OnEnterRunMode;
+                _debuggerEvents.OnEnterDesignMode -= OnEnterDesignMode;
+            }
+        }
+
+        private void OnEnterRunMode(dbgEventReason reason)
+        {
+            _ = SendEmptyEventAsync("Session Started", "session_start");
+        }
+
+        private void OnEnterDesignMode(dbgEventReason reason)
+        {
+            _ = SendEmptyEventAsync("Session Ended", "session_end");
+        }
+
+        private async Task SendEmptyEventAsync(string label, string eventKind)
+        {
+            var snapshot = new SnapshotPayload
+            {
+                Label = label,
+                EventKind = eventKind,
+                ThreadName = "",
+                Frames = new List<FramePayload>(),
+                SourceContext = null
+            };
+            await SendSnapshotAsync(snapshot);
         }
 
         private void OnEnterBreakMode(dbgEventReason reason, ref dbgExecutionAction action)
@@ -72,6 +101,14 @@ namespace HoneyB
             var debugger = _dte.Debugger as Debugger2;
             if (debugger == null) return null;
 
+            string threadName = "Main Thread";
+            try
+            {
+                threadName = debugger.CurrentThread.Name;
+                if (string.IsNullOrEmpty(threadName)) threadName = $"Thread #{debugger.CurrentThread.ID}";
+            }
+            catch { }
+
             var frames = new List<FramePayload>();
 
             // Walk all stack frames
@@ -83,26 +120,28 @@ namespace HoneyB
                 {
                     foreach (Expression local in frame.Locals)
                     {
-                        locals.Add(new VariablePayload
+                        var varPayload = new VariablePayload
                         {
                             Name = local.Name,
                             Type = local.Type,
                             Value = local.Value,
-                        });
+                            Children = new List<VariablePayload>()
+                        };
 
                         // One level of children (fields of objects)
                         if (local.DataMembers != null)
                         {
                             foreach (Expression member in local.DataMembers)
                             {
-                                locals.Add(new VariablePayload
+                                varPayload.Children.Add(new VariablePayload
                                 {
-                                    Name = $"{local.Name}.{member.Name}",
+                                    Name = member.Name,
                                     Type = member.Type,
-                                    Value = member.Value,
+                                    Value = member.Value
                                 });
                             }
                         }
+                        locals.Add(varPayload);
                     }
                 }
                 catch { /* some frames have no accessible locals */ }
@@ -156,12 +195,23 @@ namespace HoneyB
                 _ => reason.ToString(),
             };
 
+            string eventKind = reason switch
+            {
+                dbgEventReason.dbgEventReasonBreakpoint => "breakpoint",
+                dbgEventReason.dbgEventReasonStep => "step",
+                dbgEventReason.dbgEventReasonExceptionThrown => "exception",
+                dbgEventReason.dbgEventReasonExceptionNotHandled => "exception",
+                _ => "pause",
+            };
+
             if (frames.Count > 0)
                 label += $" at {frames[0].File}:{frames[0].Line}";
 
             return new SnapshotPayload
             {
                 Label = label,
+                EventKind = eventKind,
+                ThreadName = threadName,
                 Frames = frames,
                 SourceContext = sourceContext,
             };
@@ -187,6 +237,13 @@ namespace HoneyB
 
                     // Notify the chat window a new snapshot arrived
                     HoneyBChatWindow.Instance?.OnNewSnapshot(snapId, snapshot.Label);
+
+                    // Notify the timeline window of the full timeline entry
+                    if (result.timeline_entry != null)
+                    {
+                        string jsonEntry = JsonConvert.SerializeObject(result.timeline_entry);
+                        HoneyBTimelineWindow.Instance?.OnNewTimelineEntry(jsonEntry);
+                    }
                 }
             }
             catch (Exception ex)
@@ -201,7 +258,12 @@ namespace HoneyB
     public class SnapshotPayload
     {
         public string Label { get; set; }
+        [JsonProperty("event_kind")]
+        public string EventKind { get; set; }
+        [JsonProperty("thread_name")]
+        public string ThreadName { get; set; }
         public List<FramePayload> Frames { get; set; }
+        [JsonProperty("source_context")]
         public string SourceContext { get; set; }
     }
 
@@ -218,5 +280,6 @@ namespace HoneyB
         public string Name { get; set; }
         public string Type { get; set; }
         public string Value { get; set; }
+        public List<VariablePayload> Children { get; set; }
     }
 }

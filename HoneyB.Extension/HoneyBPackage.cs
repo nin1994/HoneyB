@@ -13,6 +13,7 @@ namespace HoneyB
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
     [Guid(PackageGuidString)]
     [ProvideToolWindow(typeof(HoneyBChatWindow))]
+    [ProvideToolWindow(typeof(HoneyBTimelineWindow))]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [ProvideAutoLoad(UIContextGuids80.Debugging, PackageAutoLoadFlags.BackgroundLoad)]
     public sealed class HoneyBPackage : AsyncPackage
@@ -31,8 +32,9 @@ namespace HoneyB
             _listener = new HoneyBEventListener(this);
             _listener.Start();
 
-            // Register the command to open the chat window
+            // Register the commands to open the tool windows
             await OpenHoneyBCommand.InitializeAsync(this);
+            await OpenHoneyBTimelineCommand.InitializeAsync(this);
         }
 
         protected override void Dispose(bool disposing)
