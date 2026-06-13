@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SETUP REQUIRED FOR EACH DEVELOPER
+  ──────────────────────────────────
+  Copy this file to:  HoneyB.csproj.user
+  (it is gitignored and must exist locally on every Windows dev machine)
+
+  This file tells Visual Studio to launch the Experimental Instance of VS
+  when you press F5, instead of failing with:
+      "A project with an output type of class library cannot be started"
+
+  No changes needed — $(DevEnvDir) resolves automatically to whichever
+  edition of VS 2022 you have installed (Community / Professional / Enterprise).
+-->
+<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+    <StartAction>Program</StartAction>
+    <StartProgram>$(DevEnvDir)devenv.exe</StartProgram>
+    <StartArguments>/rootsuffix Exp</StartArguments>
+  </PropertyGroup>
+</Project>

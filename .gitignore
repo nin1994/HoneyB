@@ -2,6 +2,8 @@
 bin/
 obj/
 *.user
+# Keep the setup template (tells devs what to create locally)
+!*.user.template
 *.suo
 *.userosscache
 *.sln.docstates
