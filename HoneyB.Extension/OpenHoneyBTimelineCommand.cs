@@ -11,9 +11,9 @@ namespace HoneyB
     /// </summary>
     internal sealed class OpenHoneyBTimelineCommand
     {
-        // Must match the package/vsct GUIDs (if any) or be unique.
-        private static readonly Guid CommandSetGuid = new Guid("c1d2e3f4-a5b6-7890-cdef-ab1234567890");
-        private const int CommandId = 0x0101; // Next ID after OpenHoneyBCommand
+        // Must match guidHoneyBTimelineCmdSet in HoneyBCommands.vsct
+        private static readonly Guid CommandSetGuid = new Guid("e1f2a3b4-c5d6-7890-efab-cd1234567890");
+        private const int CommandId = 0x0200;
 
         private readonly AsyncPackage _package;
 

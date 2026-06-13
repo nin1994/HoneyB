@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandDesigner">
+
+  <!--
+    This file defines three commands that appear under View > Other Windows.
+    GUIDs must match the values hard-coded in the command .cs files.
+  -->
+
+  <Extern href="stdidcmd.h" />
+  <Extern href="vsshlids.h" />
+
+  <!-- ── Symbol definitions ────────────────────────────────────────────── -->
+  <Symbols>
+
+    <!-- Package GUID (must match HoneyBPackage.PackageGuidString) -->
+    <GuidSymbol name="guidHoneyBPackage"
+                value="{a1b2c3d4-e5f6-7890-abcd-ef1234567890}" />
+
+    <!-- Command set for "Open HoneyB Chat" (OpenHoneyBCommand) -->
+    <GuidSymbol name="guidHoneyBChatCmdSet"
+                value="{c1d2e3f4-a5b6-7890-cdef-ab1234567890}">
+      <IDSymbol name="cmdOpenHoneyBChat" value="0x0100" />
+    </GuidSymbol>
+
+    <!-- Command set for "Open HoneyB Timeline" (OpenHoneyBTimelineCommand) -->
+    <GuidSymbol name="guidHoneyBTimelineCmdSet"
+                value="{e1f2a3b4-c5d6-7890-efab-cd1234567890}">
+      <IDSymbol name="cmdOpenHoneyBTimeline" value="0x0200" />
+    </GuidSymbol>
+
+    <!-- Command set for "Open HoneyB Explorer" (OpenHoneyBExploreCommand) -->
+    <GuidSymbol name="guidHoneyBExploreCmdSet"
+                value="{f1a2b3c4-d5e6-7890-fabc-de1234567890}">
+      <IDSymbol name="cmdOpenHoneyBExplore" value="0x0300" />
+    </GuidSymbol>
+
+  </Symbols>
+
+  <!-- ── Command definitions ───────────────────────────────────────────── -->
+  <Commands package="guidHoneyBPackage">
+    <Buttons>
+
+      <!-- HoneyB Chat window -->
+      <Button guid="guidHoneyBChatCmdSet" id="cmdOpenHoneyBChat"
+              priority="0x0100" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1" />
+        <Strings>
+          <ButtonText>HoneyB Chat</ButtonText>
+          <CommandName>OpenHoneyBChat</CommandName>
+        </Strings>
+      </Button>
+
+      <!-- HoneyB Timeline window -->
+      <Button guid="guidHoneyBTimelineCmdSet" id="cmdOpenHoneyBTimeline"
+              priority="0x0101" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1" />
+        <Strings>
+          <ButtonText>HoneyB Timeline</ButtonText>
+          <CommandName>OpenHoneyBTimeline</CommandName>
+        </Strings>
+      </Button>
+
+      <!-- HoneyB Explorer window (Chat + Explore + Watch tabs) -->
+      <Button guid="guidHoneyBExploreCmdSet" id="cmdOpenHoneyBExplore"
+              priority="0x0102" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1" />
+        <Strings>
+          <ButtonText>HoneyB Explorer</ButtonText>
+          <CommandName>OpenHoneyBExplorer</CommandName>
+        </Strings>
+      </Button>
+
+    </Buttons>
+  </Commands>
+
+</CommandTable>
