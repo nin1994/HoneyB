@@ -2,81 +2,77 @@
 <CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandDesigner">
 
   <!--
-    HoneyB Command Table
-    Declares three tool-window commands under View > Other Windows.
-
-    All GUIDs are inlined directly (no Extern header dependencies) so this
-    file compiles correctly in any environment that has the VSSDK targets.
-
-    guidSHLMainMenu  = {d309f791-903f-11d0-9efc-00a0c911004f}  (VS main menu)
-    IDG_VS_WNDO_OTRWNDWS1 = 0x019F  (View > Other Windows group)
+    The VSCT compiler on Windows preprocesses this file like a C++ file.
+    vsshlids.h defines guidSHLMainMenu and IDG_VS_WNDO_OTRWNDWS1.
+    stdidcmd.h defines standard command IDs.
+    These headers are resolved automatically by the VSSDK build tools.
   -->
+  <Extern href="stdidcmd.h"/>
+  <Extern href="vsshlids.h"/>
 
   <Commands package="guidHoneyBPackage">
+
     <Buttons>
 
-      <!-- ① View > Other Windows > HoneyB Chat -->
+      <!-- View > Other Windows > HoneyB Chat -->
       <Button guid="guidHoneyBChatCmdSet"
               id="cmdOpenHoneyBChat"
               priority="0x0100"
               type="Button">
-        <Parent guid="guidSHLMainMenu" id="0x019F" />
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1" />
         <Strings>
           <ButtonText>HoneyB Chat</ButtonText>
         </Strings>
       </Button>
 
-      <!-- ② View > Other Windows > HoneyB Timeline -->
+      <!-- View > Other Windows > HoneyB Timeline -->
       <Button guid="guidHoneyBTimelineCmdSet"
               id="cmdOpenHoneyBTimeline"
               priority="0x0101"
               type="Button">
-        <Parent guid="guidSHLMainMenu" id="0x019F" />
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1" />
         <Strings>
           <ButtonText>HoneyB Timeline</ButtonText>
         </Strings>
       </Button>
 
-      <!-- ③ View > Other Windows > HoneyB Explorer (Chat + Explore + Watch) -->
+      <!-- View > Other Windows > HoneyB Explorer (Chat + Explore + Watch tabs) -->
       <Button guid="guidHoneyBExploreCmdSet"
               id="cmdOpenHoneyBExplore"
               priority="0x0102"
               type="Button">
-        <Parent guid="guidSHLMainMenu" id="0x019F" />
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1" />
         <Strings>
           <ButtonText>HoneyB Explorer</ButtonText>
         </Strings>
       </Button>
 
     </Buttons>
+
   </Commands>
 
   <Symbols>
 
-    <!-- VS main menu (built-in, do not change) -->
-    <GuidSymbol name="guidSHLMainMenu"
-                value="{d309f791-903f-11d0-9efc-00a0c911004f}" />
-
-    <!-- HoneyB package GUID — must match HoneyBPackage.PackageGuidString -->
+    <!-- Package GUID — must match HoneyBPackage.PackageGuidString -->
     <GuidSymbol name="guidHoneyBPackage"
                 value="{a1b2c3d4-e5f6-7890-abcd-ef1234567890}" />
 
-    <!-- Chat window command (matches OpenHoneyBCommand.cs) -->
+    <!-- Chat command — matches OpenHoneyBCommand.cs CommandSetGuid / CommandId -->
     <GuidSymbol name="guidHoneyBChatCmdSet"
                 value="{c1d2e3f4-a5b6-7890-cdef-ab1234567890}">
-      <IDSymbol name="cmdOpenHoneyBChat" value="0x0100" />
+      <IDSymbol name="cmdOpenHoneyBChat" value="256" />
     </GuidSymbol>
 
-    <!-- Timeline window command (matches OpenHoneyBTimelineCommand.cs) -->
+    <!-- Timeline command — matches OpenHoneyBTimelineCommand.cs -->
     <GuidSymbol name="guidHoneyBTimelineCmdSet"
                 value="{e1f2a3b4-c5d6-7890-efab-cd1234567890}">
-      <IDSymbol name="cmdOpenHoneyBTimeline" value="0x0200" />
+      <IDSymbol name="cmdOpenHoneyBTimeline" value="512" />
     </GuidSymbol>
 
-    <!-- Explorer window command (matches OpenHoneyBExploreCommand.cs) -->
+    <!-- Explorer command — matches OpenHoneyBExploreCommand.cs -->
     <GuidSymbol name="guidHoneyBExploreCmdSet"
                 value="{f1a2b3c4-d5e6-7890-fabc-de1234567890}">
-      <IDSymbol name="cmdOpenHoneyBExplore" value="0x0300" />
+      <IDSymbol name="cmdOpenHoneyBExplore" value="768" />
     </GuidSymbol>
 
   </Symbols>
