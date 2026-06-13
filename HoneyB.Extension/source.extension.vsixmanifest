@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011">
+  <Metadata>
+    <Identity Id="HoneyB.vsix" Version="1.0" Language="en-US" Publisher="YourName" />
+    <DisplayName>HoneyB</DisplayName>
+    <Description>Snapshot-based AI debugging assistant for Visual Studio.</Description>
+  </Metadata>
+  <Installation>
+    <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0, 18.0)" />
+  </Installation>
+  <Dependencies>
+    <Dependency Id="Microsoft.Framework.NDP" DisplayName=".NET Framework" Version="[4.8,)" />
+  </Dependencies>
+  <Assets>
+    <Asset Type="Microsoft.VisualStudio.VsPackage" Path="HoneyB.pkgdef" />
+    <Asset Type="Microsoft.VisualStudio.MefComponent" Path="HoneyB.dll" />
+  </Assets>
+</PackageManifest>

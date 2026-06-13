@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+.env
+
+# Models (too large for git)
+models/
+
+# VS build output
+extension/bin/
+extension/obj/
+*.user
+
+# Snapshots (runtime data)
+backend/snapshots/
+
+# IDE
+.vs/
+*.suo

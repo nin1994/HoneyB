@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <OutputType>Library</OutputType>
+    <RootNamespace>HoneyB.Tests</RootNamespace>
+    <AssemblyName>HoneyB.Tests</AssemblyName>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Test framework -->
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
+    <PackageReference Include="xunit" Version="2.7.0" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.7" />
+
+    <!-- HTTP mocking -->
+    <PackageReference Include="WireMock.Net" Version="1.5.50" />
+
+    <!-- JSON -->
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+
+    <!-- The extension itself -->
+    <ProjectReference Include="..\HoneyB.Extension\HoneyB.csproj" />
+  </ItemGroup>
+
+</Project>

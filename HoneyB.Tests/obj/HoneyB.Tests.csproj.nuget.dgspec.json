@@ -1,0 +1,150 @@
+{
+  "format": 1,
+  "restore": {
+    "/Users/snimgole/Downloads/HoneyB/HoneyB.Tests/HoneyB.Tests.csproj": {}
+  },
+  "projects": {
+    "/Users/snimgole/Downloads/HoneyB/HoneyB.Extension/HoneyB.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/snimgole/Downloads/HoneyB/HoneyB.Extension/HoneyB.csproj",
+        "projectName": "HoneyB",
+        "projectPath": "/Users/snimgole/Downloads/HoneyB/HoneyB.Extension/HoneyB.csproj",
+        "packagesPath": "/Users/snimgole/.nuget/packages/",
+        "outputPath": "/Users/snimgole/Downloads/HoneyB/HoneyB.Extension/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/snimgole/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net48"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net48": {
+            "framework": "net48",
+            "targetAlias": "net48",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.300"
+      },
+      "frameworks": {
+        "net48": {
+          "framework": "net48",
+          "targetAlias": "net48",
+          "dependencies": {
+            "Microsoft.NETFramework.ReferenceAssemblies": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[1.0.3, )",
+              "autoReferenced": true
+            },
+            "Microsoft.VSSDK.BuildTools": {
+              "target": "Package",
+              "version": "[17.0.5232, )"
+            },
+            "Microsoft.VisualStudio.SDK": {
+              "target": "Package",
+              "version": "[17.0.31902.203, )"
+            },
+            "Newtonsoft.Json": {
+              "target": "Package",
+              "version": "[13.0.3, )"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/10.0.301/RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "/Users/snimgole/Downloads/HoneyB/HoneyB.Tests/HoneyB.Tests.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/snimgole/Downloads/HoneyB/HoneyB.Tests/HoneyB.Tests.csproj",
+        "projectName": "HoneyB.Tests",
+        "projectPath": "/Users/snimgole/Downloads/HoneyB/HoneyB.Tests/HoneyB.Tests.csproj",
+        "packagesPath": "/Users/snimgole/.nuget/packages/",
+        "outputPath": "/Users/snimgole/Downloads/HoneyB/HoneyB.Tests/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/snimgole/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net48"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net48": {
+            "framework": "net48",
+            "targetAlias": "net48",
+            "projectReferences": {
+              "/Users/snimgole/Downloads/HoneyB/HoneyB.Extension/HoneyB.csproj": {
+                "projectPath": "/Users/snimgole/Downloads/HoneyB/HoneyB.Extension/HoneyB.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.300"
+      },
+      "frameworks": {
+        "net48": {
+          "framework": "net48",
+          "targetAlias": "net48",
+          "dependencies": {
+            "Microsoft.NET.Test.Sdk": {
+              "target": "Package",
+              "version": "[17.9.0, )"
+            },
+            "Microsoft.NETFramework.ReferenceAssemblies": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[1.0.3, )",
+              "autoReferenced": true
+            },
+            "Newtonsoft.Json": {
+              "target": "Package",
+              "version": "[13.0.3, )"
+            },
+            "WireMock.Net": {
+              "target": "Package",
+              "version": "[1.5.50, )"
+            },
+            "xunit": {
+              "target": "Package",
+              "version": "[2.7.0, )"
+            },
+            "xunit.runner.visualstudio": {
+              "target": "Package",
+              "version": "[2.5.7, )"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/10.0.301/RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}
